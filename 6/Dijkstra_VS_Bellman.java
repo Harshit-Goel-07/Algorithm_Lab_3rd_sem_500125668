@@ -1,116 +1,119 @@
-// Yash Gupta
-// 500125397 
-import java.util.*;
+#include <stdio.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <time.h>
 
-class Dijkstra {
-    static class Edge {
-        int target, weight;
-        Edge(int target, int weight) {
-            this.target = target;
-            this.weight = weight;
-        }
+#define V 6 // Number of vertices in the graph
+
+// Dijkstra's Algorithm
+void dijkstra(int graph[V][V], int start) {
+    int distances[V];
+    bool visited[V];
+
+    // Initialize distances and visited
+    for (int i = 0; i < V; i++) {
+        distances[i] = INT_MAX;
+        visited[i] = false;
     }
+    distances[start] = 0;
 
-    static void dijkstra(List<List<Edge>> graph, int source) {
-        int V = graph.size();
-        int[] dist = new int[V];
-        Arrays.fill(dist, Integer.MAX_VALUE);
-        dist[source] = 0;
+    for (int count = 0; count < V - 1; count++) {
+        int min_distance = INT_MAX, min_index;
 
-        PriorityQueue<int[]> pq = new PriorityQueue<>(Comparator.comparingInt(a -> a[1]));
-        pq.offer(new int[]{source, 0});
-
-        while (!pq.isEmpty()) {
-            int[] current = pq.poll();
-            int node = current[0];
-            int nodeDist = current[1];
-
-            for (Edge edge : graph.get(node)) {
-                int newDist = nodeDist + edge.weight;
-                if (newDist < dist[edge.target]) {
-                    dist[edge.target] = newDist;
-                    pq.offer(new int[]{edge.target, newDist});
-                }
+        // Find the vertex with the minimum distance
+        for (int v = 0; v < V; v++) {
+            if (!visited[v] && distances[v] <= min_distance) {
+                min_distance = distances[v];
+                min_index = v;
             }
         }
 
-        System.out.println("Distances from source using Dijkstra's:");
-        System.out.println(Arrays.toString(dist));
+        visited[min_index] = true;
+
+        // Update distances of the adjacent vertices
+        for (int v = 0; v < V; v++) {
+            if (!visited[v] && graph[min_index][v] && distances[min_index] != INT_MAX &&
+                distances[min_index] + graph[min_index][v] < distances[v]) {
+                distances[v] = distances[min_index] + graph[min_index][v];
+            }
+        }
     }
+
+    // Print the results
+    printf("Dijkstra's Algorithm Result: ");
+    for (int i = 0; i < V; i++) {
+        printf("%d ", distances[i]);
+    }
+    printf("\n");
 }
-class BellmanFord {
-    static class Edge {
-        int source, target, weight;
-        Edge(int source, int target, int weight) {
-            this.source = source;
-            this.target = target;
-            this.weight = weight;
-        }
+
+// Bellman-Ford Algorithm
+void bellman_ford(int graph[V][V], int start) {
+    int distances[V];
+
+    // Initialize distances
+    for (int i = 0; i < V; i++) {
+        distances[i] = INT_MAX;
     }
+    distances[start] = 0;
 
-    static void bellmanFord(List<Edge> edges, int V, int source) {
-        int[] dist = new int[V];
-        Arrays.fill(dist, Integer.MAX_VALUE);
-        dist[source] = 0;
-
-        // Relax all edges V-1 times
-        for (int i = 0; i < V - 1; i++) {
-            for (Edge edge : edges) {
-                if (dist[edge.source] != Integer.MAX_VALUE && dist[edge.source] + edge.weight < dist[edge.target]) {
-                    dist[edge.target] = dist[edge.source] + edge.weight;
+    // Relax edges
+    for (int i = 0; i < V - 1; i++) {
+        for (int u = 0; u < V; u++) {
+            for (int v = 0; v < V; v++) {
+                if (graph[u][v] && distances[u] != INT_MAX && distances[u] + graph[u][v] < distances[v]) {
+                    distances[v] = distances[u] + graph[u][v];
                 }
             }
         }
+    }
 
-        // Check for negative weight cycles
-        for (Edge edge : edges) {
-            if (dist[edge.source] != Integer.MAX_VALUE && dist[edge.source] + edge.weight < dist[edge.target]) {
-                System.out.println("Graph contains negative weight cycle");
+    // Check for negative weight cycles
+    for (int u = 0; u < V; u++) {
+        for (int v = 0; v < V; v++) {
+            if (graph[u][v] && distances[u] != INT_MAX && distances[u] + graph[u][v] < distances[v]) {
+                printf("Graph contains a negative weight cycle\n");
                 return;
             }
         }
-
-        System.out.println("Distances from source using Bellman-Ford:");
-        System.out.println(Arrays.toString(dist));
     }
+
+    // Print the results
+    printf("Bellman-Ford Algorithm Result: ");
+    for (int i = 0; i < V; i++) {
+        printf("%d ", distances[i]);
+    }
+    printf("\n");
 }
 
-public class Dijkstra_VS_Bellman {
-    public static void main(String[] args) {
-        int V = 1000;
-        int E = 5000;
-        Random rand = new Random();
+int main() {
+    // Example graph represented as an adjacency matrix
+    int graph[V][V] = {
+        {0, 7, 9, 0, 0, 14},
+        {7, 0, 10, 15, 0, 0},
+        {9, 10, 0, 11, 0, 2},
+        {0, 15, 11, 0, 6, 0},
+        {0, 0, 0, 6, 0, 9},
+        {14, 0, 2, 0, 9, 0}
+    };
 
-        List<List<Dijkstra.Edge>> graph = new ArrayList<>();
-        List<BellmanFord.Edge> edges = new ArrayList<>();
+    clock_t start, end;
 
-        // Initialize graph
-        for (int i = 0; i < V; i++) {
-            graph.add(new ArrayList<>());
-        }
+    // Measuring Dijkstra's execution time
+    start = clock();
+    dijkstra(graph, 0);  // Start from vertex 0
+    end = clock();
+    double dijkstra_time = ((double)(end - start)) / CLOCKS_PER_SEC;
 
-        // Generate random edges
-        for (int i = 0; i < E; i++) {
-            int u = rand.nextInt(V);
-            int v = rand.nextInt(V);
-            int weight = rand.nextInt(100) + 1;
-            graph.get(u).add(new Dijkstra.Edge(v, weight));
-            edges.add(new BellmanFord.Edge(u, v, weight));
-        }
+    // Measuring Bellman-Ford execution time
+    start = clock();
+    bellman_ford(graph, 0);  // Start from vertex 0
+    end = clock();
+    double bellman_ford_time = ((double)(end - start)) / CLOCKS_PER_SEC;
 
-        int source = 0;
+    // Display execution times
+    printf("Dijkstra's Algorithm Time: %f seconds\n", dijkstra_time);
+    printf("Bellman-Ford Algorithm Time: %f seconds\n", bellman_ford_time);
 
-        // Measure time for Dijkstra's Algorithm
-        long startDijkstra = System.nanoTime();
-        Dijkstra.dijkstra(graph, source);
-        long endDijkstra = System.nanoTime();
-
-        // Measure time for Bellman-Ford Algorithm
-        long startBellmanFord = System.nanoTime();
-        BellmanFord.bellmanFord(edges, V, source);
-        long endBellmanFord = System.nanoTime();
-
-        System.out.println("Dijkstra's Algorithm Time: " + (endDijkstra - startDijkstra) / 1e6 + " ms");
-        System.out.println("Bellman-Ford Algorithm Time: " + (endBellmanFord - startBellmanFord) / 1e6 + " ms");
-    }
+    return 0;
 }
